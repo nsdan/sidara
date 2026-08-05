@@ -3238,9 +3238,11 @@ async function loadFromSheets() {
     console.log(`slsAgg: ${Object.keys(slsAgg).length} SLS, unidentified: ${unidentified.length}`);
     // ─────────────────────────────────────────
 
-    // Inject into GeoJSON features
-    geojsonLayer.eachLayer(layer => {
-      const p = layer.feature.properties;
+    // ── KUNCI: Update fullFeatures (array global) dengan data Sheets ──
+    // fullFeatures adalah sumber kebenaran untuk filter, search, dan stats.
+    // Tanpa update ini, ringkasan/statistik tetap menampilkan data lama GeoJSON.
+    fullFeatures.forEach(f => {
+      const p = f.properties;
       const agg = slsAgg[p.nmsls];
       if (agg) {
         Object.assign(p, agg);
@@ -3250,12 +3252,18 @@ async function loadFromSheets() {
       }
     });
 
-    // Refresh map styling
+    // Sync ke geojsonLayer (properties adalah referensi yang sama, tapi pastikan sinkron)
     geojsonLayer.eachLayer(layer => {
+      const p = layer.feature.properties;
+      const agg = slsAgg[p.nmsls];
+      if (agg) {
+        Object.assign(p, agg);
+      } else {
+        p.fisik=p.mental=p.intelektual=p.netra=p.rungu=p.wicara=p.ganda=p.lainnya=p.total=0;
+        p.members=[];
+      }
       layer.setStyle(slsStyle(layer.feature));
     });
-
-
 
     // Update UNIDENTIFIED_DATA global & rebuild UI
     UNIDENTIFIED_DATA = unidentified;
@@ -3275,17 +3283,11 @@ async function loadFromSheets() {
     });
     LUAR_DATA = luarList;
     rebuildInsetMap();
-    // Force Leaflet to recalculate canvas size — penting karena inset
-    // mungkin diinit saat kontainer belum punya ukuran nyata di DOM.
     setTimeout(() => { try { insetMap.invalidateSize(); } catch(e){} }, 50);
 
-    // Rebuild stats + top3
-    if (geojsonLayer) {
-      const allFeatures = [];
-      geojsonLayer.eachLayer(l => allFeatures.push(l.feature));
-      if (typeof calcStats === 'function') calcStats(allFeatures);
-      if (typeof renderTop3 === 'function') renderTop3(allFeatures);
-    }
+    // Rebuild stats + top3 dari fullFeatures yang sudah terupdate
+    if (typeof calcStats === 'function') calcStats(fullFeatures);
+    if (typeof renderTop3 === 'function') renderTop3(fullFeatures);
 
     const totalLoaded = Object.values(slsAgg).reduce((s,v)=>s+v.total,0) + unidentified.length;
     if (statusEl) statusEl.textContent = `✅ ${totalLoaded} data dimuat dari Google Sheets`;
