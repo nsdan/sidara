@@ -1294,23 +1294,23 @@ body, html {
 }
 
 /* =============================================
-   RESPONSIVE — MOBILE (≤768px)
+   RESPONSIVE — MOBILE (max-width: 768px)
    ============================================= */
 @media (max-width: 768px) {
 
   #app { position: relative; }
 
-  /* Sidebar jadi drawer overlay penuh layar */
   #sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     width: 86vw;
     max-width: 340px;
     min-width: 0;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     z-index: 1200;
     box-shadow: 6px 0 30px rgba(0,0,0,.25);
+    transition: transform .25s ease;
   }
   #sidebar.collapsed {
     width: 86vw;
@@ -1321,7 +1321,6 @@ body, html {
     transform: translateX(0);
   }
 
-  /* Overlay gelap saat sidebar terbuka */
   #sidebar-overlay {
     display: none;
     position: fixed;
@@ -1331,50 +1330,59 @@ body, html {
   }
   body.sidebar-is-open #sidebar-overlay { display: block; }
 
-  /* Tombol toggle selalu menempel kiri, di atas map */
+  /* Tombol toggle: FIXED ke viewport, bukan relative ke #app */
   #sidebar-toggle {
+    position: fixed !important;
     left: 0 !important;
-    top: auto;
-    bottom: 16px;
-    transform: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 0 12px 12px 0;
-    z-index: 1250;
-    font-size: 16px;
+    top: auto !important;
+    bottom: 80px !important;
+    transform: none !important;
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 0 14px 14px 0 !important;
+    z-index: 1300 !important;
+    font-size: 18px !important;
+    background: var(--accent) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 3px 0 14px rgba(109,40,217,.4) !important;
   }
 
-  #map-wrap { width: 100%; }
+  #map-wrap {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+  }
 
-  /* Panel filter & legenda mengambang: lebih ramping, tumpuk vertikal */
-  #map-filter-panel,
-  #map-legend-panel {
-    width: calc(100vw - 24px);
-    max-width: 280px;
+  #map-filter-panel {
     left: 12px;
+    top: 12px;
+    width: calc(100vw - 24px);
+    max-width: 260px;
   }
-  #map-filter-panel { top: 12px; }
-  #map-legend-panel { bottom: 12px; }
 
-  /* Inset map kecil dipindah ke pojok agar tidak menumpuk legenda */
-  #inset-map-container {
-    width: 130px;
-    right: 12px;
+  #map-legend-panel {
+    left: 12px;
     bottom: 12px;
+    width: calc(100vw - 24px);
+    max-width: 230px;
+  }
+
+  #inset-map-container {
+    width: 140px;
+    right: 8px;
+    bottom: 8px;
   }
   #inset-map-container:not(.collapsed) { width: 150px; }
   #inset-map { height: 90px; }
   .inset-legend-items { max-height: 60px; }
 
-  /* Detail panel jadi bottom sheet full-width */
   #detail-panel {
     top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     width: 100%;
     max-width: 100%;
-    max-height: 65vh;
+    max-height: 60vh;
     border-radius: var(--radius) var(--radius) 0 0;
     animation: slideUpMobile .25s ease;
   }
@@ -1383,14 +1391,65 @@ body, html {
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .map-hint { font-size: 0.68rem; max-width: 70vw; }
+  .map-hint { font-size: 0.68rem; max-width: 60vw; top: 12px; right: 8px; }
   .sb-header { padding: 18px 16px 16px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* Landscape mobile — layar lebar tapi pendek */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+
+  #sidebar {
+    position: fixed !important;
+    width: 260px !important;
+    max-width: 260px !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow-y: auto;
+  }
+
+  #map-filter-panel {
+    top: 8px; left: 8px;
+    max-width: 195px;
+  }
+  #map-filter-panel .mfp-body {
+    max-height: 38vh !important;
+    overflow-y: auto;
+  }
+
+  #map-legend-panel {
+    bottom: 8px; left: 8px;
+    max-width: 185px;
+  }
+  #map-legend-panel .mfp-body {
+    max-height: 28vh !important;
+    overflow-y: auto;
+  }
+
+  #inset-map-container {
+    width: 120px; right: 8px; bottom: 8px;
+  }
+  #inset-map { height: 70px; }
+
+  /* Detail panel jadi side-sheet di kanan saat landscape */
+  #detail-panel {
+    top: 0; right: 0; bottom: 0; left: auto !important;
+    width: 300px !important;
+    max-width: 300px !important;
+    max-height: 100vh !important;
+    border-radius: var(--radius) 0 0 var(--radius) !important;
+    animation: slideIn .25s ease !important;
+  }
+
+  #sidebar-toggle {
+    bottom: 50% !important;
+    transform: translateY(50%) !important;
+  }
+}
+
 @media (max-width: 400px) {
-  #map-filter-panel,
-  #map-legend-panel { max-width: 240px; }
+  #map-filter-panel { max-width: 210px; }
+  #map-legend-panel { max-width: 200px; }
   #inset-map-container { width: 110px; }
 }
 </style>
@@ -2511,55 +2570,98 @@ map.on("click", () => {
 // SIDEBAR TOGGLE
 // =============================================
 let sidebarOpen = true;
+
+function isMobileView() {
+  return window.innerWidth <= 768;
+}
+
+function syncToggleBtn() {
+  const btn = document.getElementById("sidebar-toggle");
+  if (!btn) return;
+  // Hapus semua inline style agar CSS yang mengatur sepenuhnya
+  btn.style.removeProperty("left");
+  btn.style.removeProperty("top");
+  btn.style.removeProperty("bottom");
+  btn.style.removeProperty("transform");
+  btn.style.removeProperty("position");
+  // Di desktop, set left via inline sesuai state
+  if (!isMobileView()) {
+    btn.style.left = sidebarOpen ? "300px" : "0px";
+  }
+  btn.textContent = sidebarOpen ? "‹" : "›";
+}
+
 function toggleSidebar() {
   sidebarOpen = !sidebarOpen;
   const sb = document.getElementById("sidebar");
-  const btn = document.getElementById("sidebar-toggle");
-  const isMobile = window.innerWidth <= 768;
   if (sidebarOpen) {
     sb.classList.remove("collapsed");
     document.body.classList.add("sidebar-is-open");
-    btn.textContent = "‹";
-    btn.style.left = isMobile ? "" : "300px";
   } else {
     sb.classList.add("collapsed");
     document.body.classList.remove("sidebar-is-open");
-    btn.textContent = "›";
-    btn.style.left = isMobile ? "" : "0";
   }
+  syncToggleBtn();
   setTimeout(() => map.invalidateSize(), 260);
 }
 
-// Di layar mobile, mulai dengan sidebar tertutup agar peta langsung terlihat
-if (window.matchMedia("(max-width: 768px)").matches) {
+// Di layar mobile, mulai dengan sidebar tertutup
+if (isMobileView()) {
   sidebarOpen = false;
-  window.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("sidebar").classList.add("collapsed");
-    document.getElementById("sidebar-toggle").textContent = "›";
-    // Jangan set style.left inline — biarkan CSS mobile yang mengatur posisi
-  });
 }
+
+// Sync saat DOM siap
+document.addEventListener("DOMContentLoaded", () => {
+  const sb = document.getElementById("sidebar");
+  if (!sidebarOpen) sb.classList.add("collapsed");
+  syncToggleBtn();
+});
+
+// Re-sync saat orientasi berubah (portrait ↔ landscape)
+window.addEventListener("resize", () => {
+  syncToggleBtn();
+  setTimeout(() => { try { map.invalidateSize(); } catch(e){} }, 300);
+});
 
 // =============================================
 // MAP FLOATING PANEL TOGGLE
 // =============================================
-const panelStates = {};
+// Map panel-id ke body/arrow id secara eksplisit — hindari string-replace rawan bug
+const PANEL_ID_MAP = {
+  "map-filter-panel": "filter",
+  "map-legend-panel": "legend",
+};
+
 function toggleMapPanel(id) {
-  const body = document.getElementById("mfp-body-" + id.replace("map-","").replace("-panel",""));
-  const arrow = document.getElementById("mfp-arrow-" + id.replace("map-","").replace("-panel",""));
-  if (!body) return;
+  const key = PANEL_ID_MAP[id] || id.replace("map-","").replace("-panel","");
+  const body  = document.getElementById("mfp-body-"  + key);
+  const arrow = document.getElementById("mfp-arrow-" + key);
+  if (!body) { console.warn("toggleMapPanel: body not found for", id, "key=", key); return; }
   const isOpen = !body.classList.contains("collapsed");
   if (isOpen) {
     body.classList.add("collapsed");
-    if (arrow) arrow.classList.remove("up");
+    if (arrow) { arrow.classList.remove("up"); arrow.textContent = "▼"; }
   } else {
     body.classList.remove("collapsed");
-    if (arrow) arrow.classList.add("up");
+    if (arrow) { arrow.classList.add("up"); arrow.textContent = "▲"; }
   }
 }
 
-// Init panel arrows as open (up)
-document.querySelectorAll(".mfp-arrow").forEach(a => a.classList.add("up"));
+// Init: semua panel mulai terbuka (arrow menunjuk atas)
+document.querySelectorAll(".mfp-arrow").forEach(a => {
+  a.classList.add("up");
+  a.textContent = "▲";
+});
+
+// Di mobile, collapse filter panel secara default agar tidak menutupi peta
+if (isMobileView()) {
+  document.addEventListener("DOMContentLoaded", () => {
+    const filterBody  = document.getElementById("mfp-body-filter");
+    const filterArrow = document.getElementById("mfp-arrow-filter");
+    if (filterBody)  { filterBody.classList.add("collapsed"); }
+    if (filterArrow) { filterArrow.classList.remove("up"); filterArrow.textContent = "▼"; }
+  });
+}
 
 // =============================================
 // MEMBER GROUP ACCORDION TOGGLE
