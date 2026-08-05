@@ -109,6 +109,8 @@ body, html {
   color: var(--accent);
 }
 
+#sidebar-overlay { display: none; }
+
 .sb-header {
   padding: 24px 20px 20px;
   background: linear-gradient(135deg, #4C1D95 0%, #6D28D9 60%, #7C3AED 100%);
@@ -1288,12 +1290,113 @@ body, html {
   border-radius: 10px; font-size: 0.65rem; font-weight: 600;
 }
 
+/* =============================================
+   RESPONSIVE — MOBILE (≤768px)
+   ============================================= */
+@media (max-width: 768px) {
+
+  #app { position: relative; }
+
+  /* Sidebar jadi drawer overlay penuh layar */
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 86vw;
+    max-width: 340px;
+    min-width: 0;
+    height: 100%;
+    z-index: 1200;
+    box-shadow: 6px 0 30px rgba(0,0,0,.25);
+  }
+  #sidebar.collapsed {
+    width: 86vw;
+    max-width: 340px;
+    transform: translateX(-100%);
+  }
+  #sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+
+  /* Overlay gelap saat sidebar terbuka */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 1100;
+  }
+  body.sidebar-is-open #sidebar-overlay { display: block; }
+
+  /* Tombol toggle selalu menempel kiri, di atas map */
+  #sidebar-toggle {
+    left: 0 !important;
+    top: auto;
+    bottom: 16px;
+    transform: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 0 12px 12px 0;
+    z-index: 1250;
+    font-size: 16px;
+  }
+
+  #map-wrap { width: 100%; }
+
+  /* Panel filter & legenda mengambang: lebih ramping, tumpuk vertikal */
+  #map-filter-panel,
+  #map-legend-panel {
+    width: calc(100vw - 24px);
+    max-width: 280px;
+    left: 12px;
+  }
+  #map-filter-panel { top: 12px; }
+  #map-legend-panel { bottom: 12px; }
+
+  /* Inset map kecil dipindah ke pojok agar tidak menumpuk legenda */
+  #inset-map-container {
+    width: 130px;
+    right: 12px;
+    bottom: 12px;
+  }
+  #inset-map-container:not(.collapsed) { width: 150px; }
+  #inset-map { height: 90px; }
+  .inset-legend-items { max-height: 60px; }
+
+  /* Detail panel jadi bottom sheet full-width */
+  #detail-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 65vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    animation: slideUpMobile .25s ease;
+  }
+  @keyframes slideUpMobile {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .map-hint { font-size: 0.68rem; max-width: 70vw; }
+  .sb-header { padding: 18px 16px 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 400px) {
+  #map-filter-panel,
+  #map-legend-panel { max-width: 240px; }
+  #inset-map-container { width: 110px; }
+}
 </style>
 </head>
 <body>
 <div id="app">
 
   <button id="sidebar-toggle" onclick="toggleSidebar()" title="Sembunyikan/Tampilkan panel">‹</button>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
   <!-- SIDEBAR -->
   <nav id="sidebar">
@@ -2409,16 +2512,29 @@ function toggleSidebar() {
   sidebarOpen = !sidebarOpen;
   const sb = document.getElementById("sidebar");
   const btn = document.getElementById("sidebar-toggle");
+  const isMobile = window.innerWidth <= 768;
   if (sidebarOpen) {
     sb.classList.remove("collapsed");
+    document.body.classList.add("sidebar-is-open");
     btn.textContent = "‹";
-    btn.style.left = "300px";
+    if (!isMobile) btn.style.left = "300px";
   } else {
     sb.classList.add("collapsed");
+    document.body.classList.remove("sidebar-is-open");
     btn.textContent = "›";
     btn.style.left = "0";
   }
   setTimeout(() => map.invalidateSize(), 260);
+}
+
+// Di layar mobile, mulai dengan sidebar tertutup agar peta langsung terlihat
+if (window.matchMedia("(max-width: 768px)").matches) {
+  sidebarOpen = false;
+  window.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("sidebar").classList.add("collapsed");
+    document.getElementById("sidebar-toggle").textContent = "›";
+    document.getElementById("sidebar-toggle").style.left = "0";
+  });
 }
 
 // =============================================
