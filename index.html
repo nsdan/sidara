@@ -1040,14 +1040,17 @@ body, html {
 
 .mfp-body {
   padding: 10px 12px 12px;
-  transition: max-height .2s ease, padding .2s ease;
+  max-height: 600px;
+  transition: max-height .25s ease, padding .25s ease, opacity .2s ease;
   overflow: hidden;
+  opacity: 1;
 }
 
 .mfp-body.collapsed {
   max-height: 0 !important;
   padding-top: 0;
   padding-bottom: 0;
+  opacity: 0;
 }
 
 .mfp-label {
@@ -2517,12 +2520,12 @@ function toggleSidebar() {
     sb.classList.remove("collapsed");
     document.body.classList.add("sidebar-is-open");
     btn.textContent = "‹";
-    if (!isMobile) btn.style.left = "300px";
+    btn.style.left = isMobile ? "" : "300px";
   } else {
     sb.classList.add("collapsed");
     document.body.classList.remove("sidebar-is-open");
     btn.textContent = "›";
-    btn.style.left = "0";
+    btn.style.left = isMobile ? "" : "0";
   }
   setTimeout(() => map.invalidateSize(), 260);
 }
@@ -2533,7 +2536,7 @@ if (window.matchMedia("(max-width: 768px)").matches) {
   window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("sidebar").classList.add("collapsed");
     document.getElementById("sidebar-toggle").textContent = "›";
-    document.getElementById("sidebar-toggle").style.left = "0";
+    // Jangan set style.left inline — biarkan CSS mobile yang mengatur posisi
   });
 }
 
