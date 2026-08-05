@@ -3238,30 +3238,30 @@ async function loadFromSheets() {
     console.log(`slsAgg: ${Object.keys(slsAgg).length} SLS, unidentified: ${unidentified.length}`);
     // ─────────────────────────────────────────
 
-    // ── Reset SEMUA properties dulu sebelum inject data baru ──
-    // Wajib dilakukan agar penghapusan baris di Sheets langsung terefleksi.
-    // Tanpa reset, angka lama tetap tersisa meski data Sheets sudah berkurang.
+    // ── Reset fullFeatures ke nol, lalu inject data baru dari Sheets ──
+    // Reset wajib dilakukan agar baris yang dihapus di Sheets ikut terhapus di UI.
+    // L.geoJSON() meng-copy data — geojsonLayer BUKAN referensi fullFeatures,
+    // sehingga satu-satunya cara agar stats/peta akurat adalah re-render penuh.
     const ZERO = { fisik:0, mental:0, intelektual:0, netra:0, rungu:0,
                    wicara:0, ganda:0, lainnya:0, total:0, members:[] };
 
     fullFeatures.forEach(f => {
+      // Reset dulu, baru assign data baru
       Object.assign(f.properties, JSON.parse(JSON.stringify(ZERO)));
-    });
-
-    // Inject data baru dari Sheets ke fullFeatures
-    fullFeatures.forEach(f => {
       const agg = slsAgg[f.properties.nmsls];
       if (agg) Object.assign(f.properties, agg);
     });
 
-    // Sync ke geojsonLayer dan refresh warna choropleth
-    geojsonLayer.eachLayer(layer => {
-      const p = layer.feature.properties;
-      const agg = slsAgg[p.nmsls];
-      Object.assign(p, JSON.parse(JSON.stringify(ZERO)));
-      if (agg) Object.assign(p, agg);
-      layer.setStyle(slsStyle(layer.feature));
-    });
+    // Re-render layer dari fullFeatures yang sudah bersih —
+    // ini sekaligus memperbarui peta, tooltip, calcStats, dan renderTop3.
+    // Simpan filter aktif agar tidak reset ke "all" setelah refresh.
+    const savedSearch = searchTerm;
+    const savedMode   = filterMode;
+    renderLayer(fullFeatures);
+    searchTerm  = savedSearch;
+    filterMode  = savedMode;
+    // Terapkan kembali filter jika ada
+    if (searchTerm || filterMode !== 'all') applyFilter();
 
     // Update UNIDENTIFIED_DATA global & rebuild UI
     UNIDENTIFIED_DATA = unidentified;
@@ -3282,10 +3282,6 @@ async function loadFromSheets() {
     LUAR_DATA = luarList;
     rebuildInsetMap();
     setTimeout(() => { try { insetMap.invalidateSize(); } catch(e){} }, 50);
-
-    // Rebuild stats + top3 dari fullFeatures yang sudah bersih & terupdate
-    if (typeof calcStats === 'function') calcStats(fullFeatures);
-    if (typeof renderTop3 === 'function') renderTop3(fullFeatures);
 
     const totalLoaded = Object.values(slsAgg).reduce((s,v)=>s+v.total,0) + unidentified.length;
     if (statusEl) statusEl.textContent = `✅ ${totalLoaded} data dimuat dari Google Sheets`;
