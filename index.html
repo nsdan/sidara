@@ -3238,30 +3238,28 @@ async function loadFromSheets() {
     console.log(`slsAgg: ${Object.keys(slsAgg).length} SLS, unidentified: ${unidentified.length}`);
     // ─────────────────────────────────────────
 
-    // ── KUNCI: Update fullFeatures (array global) dengan data Sheets ──
-    // fullFeatures adalah sumber kebenaran untuk filter, search, dan stats.
-    // Tanpa update ini, ringkasan/statistik tetap menampilkan data lama GeoJSON.
+    // ── Reset SEMUA properties dulu sebelum inject data baru ──
+    // Wajib dilakukan agar penghapusan baris di Sheets langsung terefleksi.
+    // Tanpa reset, angka lama tetap tersisa meski data Sheets sudah berkurang.
+    const ZERO = { fisik:0, mental:0, intelektual:0, netra:0, rungu:0,
+                   wicara:0, ganda:0, lainnya:0, total:0, members:[] };
+
     fullFeatures.forEach(f => {
-      const p = f.properties;
-      const agg = slsAgg[p.nmsls];
-      if (agg) {
-        Object.assign(p, agg);
-      } else {
-        p.fisik=p.mental=p.intelektual=p.netra=p.rungu=p.wicara=p.ganda=p.lainnya=p.total=0;
-        p.members=[];
-      }
+      Object.assign(f.properties, JSON.parse(JSON.stringify(ZERO)));
     });
 
-    // Sync ke geojsonLayer (properties adalah referensi yang sama, tapi pastikan sinkron)
+    // Inject data baru dari Sheets ke fullFeatures
+    fullFeatures.forEach(f => {
+      const agg = slsAgg[f.properties.nmsls];
+      if (agg) Object.assign(f.properties, agg);
+    });
+
+    // Sync ke geojsonLayer dan refresh warna choropleth
     geojsonLayer.eachLayer(layer => {
       const p = layer.feature.properties;
       const agg = slsAgg[p.nmsls];
-      if (agg) {
-        Object.assign(p, agg);
-      } else {
-        p.fisik=p.mental=p.intelektual=p.netra=p.rungu=p.wicara=p.ganda=p.lainnya=p.total=0;
-        p.members=[];
-      }
+      Object.assign(p, JSON.parse(JSON.stringify(ZERO)));
+      if (agg) Object.assign(p, agg);
       layer.setStyle(slsStyle(layer.feature));
     });
 
@@ -3285,7 +3283,7 @@ async function loadFromSheets() {
     rebuildInsetMap();
     setTimeout(() => { try { insetMap.invalidateSize(); } catch(e){} }, 50);
 
-    // Rebuild stats + top3 dari fullFeatures yang sudah terupdate
+    // Rebuild stats + top3 dari fullFeatures yang sudah bersih & terupdate
     if (typeof calcStats === 'function') calcStats(fullFeatures);
     if (typeof renderTop3 === 'function') renderTop3(fullFeatures);
 
