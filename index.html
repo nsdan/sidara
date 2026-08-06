@@ -1873,11 +1873,14 @@ function calcStats(features) {
 
   const total = seenNmsls.size;
 
-  // Compute per-unique-RT totals using active cats
-  const totals = uniqueProps.map(p => computeFilteredTotal(p));
-  const ada = totals.filter(t => t > 0).length;
-  const totalP = totals.reduce((s, t) => s + t, 0);
-  const max = totals.length ? Math.max(...totals) : 0;
+  // Total semua penyandang (dari p.total — semua kategori, tidak bergantung filter aktif)
+  const rawTotals  = uniqueProps.map(p => p.total || 0);
+  const totalP     = rawTotals.reduce((s, t) => s + t, 0);
+
+  // Untuk ada/tertinggi — gunakan filtered total agar konsisten dengan warna peta
+  const filtTotals = uniqueProps.map(p => computeFilteredTotal(p));
+  const ada = filtTotals.filter(t => t > 0).length;
+  const max = filtTotals.length ? Math.max(...filtTotals) : 0;
 
   document.getElementById("statTotalSLS").textContent = total.toLocaleString("id-ID");
   document.getElementById("statSLSAda").textContent = ada.toLocaleString("id-ID");
@@ -3137,7 +3140,9 @@ async function loadFromSheets() {
   if (statusEl) statusEl.textContent = 'Mengambil data dari Google Sheets…';
 
   try {
-    const resp = await fetch(SHEETS_CSV_URL);
+    // Tambahkan timestamp agar browser tidak memakai cache lama
+    const urlNoCache = SHEETS_CSV_URL + '&_t=' + Date.now();
+    const resp = await fetch(urlNoCache, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const text = await resp.text();
     const rows = parseCSV(text);
@@ -3246,10 +3251,19 @@ async function loadFromSheets() {
                    wicara:0, ganda:0, lainnya:0, total:0, members:[] };
 
     fullFeatures.forEach(f => {
-      // Reset dulu, baru assign data baru
-      Object.assign(f.properties, JSON.parse(JSON.stringify(ZERO)));
+      // Reset dulu dengan salinan ZERO yang baru (array members baru per feature)
+      Object.assign(f.properties, { fisik:0, mental:0, intelektual:0, netra:0,
+                                     rungu:0, wicara:0, ganda:0, lainnya:0, total:0, members:[] });
       const agg = slsAgg[f.properties.nmsls];
-      if (agg) Object.assign(f.properties, agg);
+      if (agg) {
+        // Deep copy agar members array tidak ter-share antar feature
+        Object.assign(f.properties, {
+          fisik: agg.fisik, mental: agg.mental, intelektual: agg.intelektual,
+          netra: agg.netra, rungu: agg.rungu, wicara: agg.wicara,
+          ganda: agg.ganda, lainnya: agg.lainnya, total: agg.total,
+          members: agg.members.slice()  // salinan array, bukan referensi
+        });
+      }
     });
 
     // Re-render layer dari fullFeatures yang sudah bersih —
